@@ -25,7 +25,10 @@
         "ext-PDO": "*",
         "ext-pcre": "*",
         "doctrine/dbal": "^2.7",
-        "smi2/phpClickHouse": "^1.0"
+        "smi2/phpClickHouse": "^1.0",
+        "doctrine/orm": "^2.5",
+        "doctrine/doctrine-bundle": "^1.6",
+        "doctrine/doctrine-cache-bundle": "^1.2"
     },
     "require-dev": {
         "doctrine/coding-standard": "^4.0",

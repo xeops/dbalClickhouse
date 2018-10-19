@@ -214,3 +214,86 @@ doctrine:
 * [Data Retrieval And Manipulation](http://docs.doctrine-project.org/projects/doctrine-dbal/en/latest/reference/data-retrieval-and-manipulation.html)
 * [SQL Query Builder](http://docs.doctrine-project.org/projects/doctrine-dbal/en/latest/reference/query-builder.html)
 * [Schema-Representation](http://docs.doctrine-project.org/projects/doctrine-dbal/en/latest/reference/schema-representation.html)
+
+
+# ClickHouse Bundle
+бандл для работы с библиотекой Yandex ClickHouse
+
+### Основные потребности в бандле
+
+ - возможность работы с таблицами ClickHouse и библиотекой [dbal-clickhouse](https://github.com/FriendsOfDoctrine/dbal-clickhouse)
+    - возможность задавать аннотации подобно ORM/Doctrine
+    - возможность единой схемы создания таблиц из аннотаций
+    - возможность вставки и выборки данных без задания явных запросов
+
+
+#### Аннотация таблиц
+```php
+/**
+ * Class EventTable
+ * @package iikoEventsBundle\Model
+ * @ORM\Table(name="event_log", schema="ReplacingMergeTree")
+ */
+class EventTable extends ClickHouseTableBase
+{
+
+	/**
+	 * @ORM\Column(name="id", type="guid",unique=true)
+	 * @var string
+	 */
+	private $id;
+
+```
+>**unique=true** служит для обозначения первичных ключей. В clickhouse нет уникальных полей
+
+
+
+
+Для каждой таблицы также необходим репозиторий, выступающий в качестве сервиса для общения с базой данных
+
+```php
+/**
+ * Class TableNameRepository
+ * @ClickHouseEntityTarget(entityClass="{{REFERENCE_TO_TABLE_NAME_CLASS}}")
+ */
+class TableNameRepository extends ClickHouseRepository
+{
+
+}
+```
+#### Регистрация сервиса репозитория
+Процесс связи таблицы и базы данных возможен только с помощью сервиса репозитория
+```yaml
+   bundle.table_repository:
+        class: BundleNameBundle\Model\ClickHouseTables\NameOfTAbleTableRepository
+        arguments: ['@logger', '@doctrine.dbal.clickhouse_connection']
+        tags:
+            - {name: kernel.event_listener, event: 'system.update', method: createTable}
+
+```
+#### INSERT
+Вы всегда можете вставить записи вручную, воспользовавшись [официальной документацией](https://github.com/FriendsOfDoctrine/dbal-clickhouse)
+```php
+    foreach($data as $item)
+    {
+        $object = (new TableName())->set…()->…;
+        $this->repoService->persist($object);
+    }
+    $this->repoService->flush();
+```
+
+#### SELECT
+
+Выборка данных производится с помощью массива обьектов класса Criteria
+
+```php
+$criteria = Criteria::create()
+	->andWhere(Criteria::expr()->eq('store_configuration_id', $store->getId()))
+	->andWhere(Criteria::expr()->gte('created', $filter->getDateFrom()->format('Y-m-d')))
+	->andWhere(Criteria::expr()->lte('created', $filter->getDateTo()->format('Y-m-d')));
+```
+Далее получаем данные
+
+```php
+$responce = $this->get('bundle.table_repository')->findBy($criteries);
+```
