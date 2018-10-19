@@ -65,7 +65,7 @@ abstract class ClickHouseTableBase implements \JsonSerializable
 		if ($eventDate) {
 			$newTable->addOption('eventDateColumn', $eventDate);
 		}
-		if ($eventDate) {
+		if ($version) {
 			$newTable->addOption('versionColumn', $version);
 		}
 		return $newTable;
