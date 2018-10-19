@@ -8,7 +8,7 @@
         "clickhouse",
         "driver"
     ],
-    "homepage": "http://github.com/friendsofdoctrine/dbal-clickhouse",
+    "homepage": "https://github.com/xeops/dbal-clickhouse",
     "license": "MIT",
     "authors": [
         {
@@ -18,6 +18,10 @@
         {
             "name": "Mitrofanov Nikolay",
             "email": "mitrofanovnk@yandex.ru"
+        },
+        {
+            "name": "Alexei Generalov",
+            "email": "xeops123@mail.ru"
         }
     ],
     "require": {
