@@ -6,7 +6,7 @@
  * Time: 21:25
  */
 
-namespace ClickHouseBundle\Mapping;
+namespace FOD\DBALClickHouse\Model;
 
 /**
  * @Annotation

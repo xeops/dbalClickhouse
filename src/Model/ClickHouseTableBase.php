@@ -6,7 +6,7 @@
  * Time: 16:04
  */
 
-namespace ClickHouseBundle\Model;
+namespace FOD\DBALClickHouse\Model;
 
 
 use Doctrine\Common\Annotations\AnnotationReader;

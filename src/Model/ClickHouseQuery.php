@@ -6,7 +6,7 @@
  * Time: 16:39
  */
 
-namespace ClickHouseBundle\Model;
+namespace FOD\DBALClickHouse\Model;
 
 
 use Doctrine\Common\Collections\Criteria;

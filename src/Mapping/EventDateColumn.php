@@ -6,7 +6,7 @@
  * Time: 20:56
  */
 
-namespace ClickHouseBundle\Mapping;
+namespace FOD\DBALClickHouse\Mapping;
 
 
 use Doctrine\ORM\Mapping\Annotation;

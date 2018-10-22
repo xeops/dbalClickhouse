@@ -6,7 +6,7 @@
  * Time: 21:21
  */
 
-namespace ClickHouseBundle\Model;
+namespace FOD\DBALClickHouse\Model;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Collections\ArrayCollection;
