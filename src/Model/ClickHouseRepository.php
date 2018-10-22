@@ -16,7 +16,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Class ClickHouseRepository
- * @package ClickHouseBundle\Model
+ * @package FOD\DBALClickHouse\Model\Model
  */
 class ClickHouseRepository
 {
@@ -74,9 +74,9 @@ class ClickHouseRepository
 		$reader = new AnnotationReader();
 		$reflector = new \ReflectionClass(static::class);
 
-		/** @var \ClickHouseBundle\Mapping\ClickHouseEntityTarget $tableInfo */
-		$tableInfo = $reader->getClassAnnotation($reflector, '\ClickHouseBundle\Mapping\ClickHouseEntityTarget');
-
+		/** @var \FOD\DBALClickHouse\Mapping\ClickHouseEntityTarget $tableInfo */
+		$tableInfo = $reader->getClassAnnotation($reflector, '\FOD\DBALClickHouse\Mapping\ClickHouseEntityTarget');
+		var_dump($tableInfo);
 		/** @var ClickHouseTableBase $entityClass */
 		$entityClass = $tableInfo->entityClass;
 

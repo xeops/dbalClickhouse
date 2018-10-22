@@ -51,11 +51,11 @@ abstract class ClickHouseTableBase implements \JsonSerializable
 				$keys[] = $columnDefinition->name;
 			}
 
-			if ($reader->getPropertyAnnotation($property, '\ClickHouseBundle\Mapping\EventDateColumn')) {
+			if ($reader->getPropertyAnnotation($property, '\FOD\DBALClickHouse\Mapping\EventDateColumn')) {
 				$eventDate = $columnDefinition->name;
 			}
 
-			if ($reader->getPropertyAnnotation($property, '\ClickHouseBundle\Mapping\VersionColumn')) {
+			if ($reader->getPropertyAnnotation($property, '\FOD\DBALClickHouse\Mapping\VersionColumn')) {
 				$version = $columnDefinition->name;
 			}
 		}
