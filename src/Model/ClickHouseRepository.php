@@ -76,7 +76,6 @@ class ClickHouseRepository
 
 		/** @var \FOD\DBALClickHouse\Mapping\ClickHouseEntityTarget $tableInfo */
 		$tableInfo = $reader->getClassAnnotation($reflector, '\FOD\DBALClickHouse\Mapping\ClickHouseEntityTarget');
-		var_dump($tableInfo);
 		/** @var ClickHouseTableBase $entityClass */
 		$entityClass = $tableInfo->entityClass;
 
