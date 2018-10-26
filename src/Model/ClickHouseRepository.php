@@ -139,6 +139,7 @@ class ClickHouseRepository
 
 	public function flush()
 	{
+		$start = microtime(true);
 		if ($this->insert->count() === 0)
 		{
 			return true;
@@ -167,6 +168,7 @@ class ClickHouseRepository
 
 			$this->connection->exec($sql);
 		}
+		$this->logger->info("ClickHouse:", ['time' => microtime(true) - $start, 'count' => $this->insert->count()]);
 		$this->insert = new ArrayCollection();
 
 //		$this->connection->exec("OPTIMIZE TABLE {$this->tableName}"); //TODO понять наиболее оптимизированный запрос
