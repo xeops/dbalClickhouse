@@ -139,39 +139,23 @@ class ClickHouseRepository
 
 	public function flush()
 	{
-		$start = microtime(true);
 		if ($this->insert->count() === 0)
 		{
 			return true;
 		}
-
 		$fields = implode(',', array_keys($this->insert->first()->toSqlArray()));
+		$start = microtime(true);
 
-		$insertStrings = [];
-
-		foreach (array_chunk($this->insert->toArray(), 1000) as $chunk)
+		foreach (array_chunk($this->insert->toArray(), 500000) as $chunk)
 		{
-			/** @var ClickHouseTableBase $item */
-			foreach ($chunk as $item)
-			{
-				$insertString = [];
-
-				foreach ($item->toSqlArray() as $value)
+			$this->connection->exec("INSERT INTO {$this->tableName} ({$fields}) VALUES (" . implode("),(", array_map(function ($element)
 				{
-					$insertString[] = (is_int($value) || is_float($value)) ? $value : "'" . str_replace("'", "\\'", $value) . "'";
-				}
-				$insertStrings[] = implode(",", $insertString);
-			}
-
-			/** @var string $sql */
-			$sql = "INSERT INTO {$this->tableName} ({$fields}) VALUES (" . implode("),(", $insertStrings) . ")";
-
-			$this->connection->exec($sql);
+					return implode(",", $element->toSqlArray());
+				}, $chunk)) . ")");
 		}
-		$this->logger->info("ClickHouse:", ['time' => microtime(true) - $start, 'count' => $this->insert->count()]);
+		$this->connection->exec("OPTIMIZE TABLE {$this->tableName}"); //TODO понять наиболее оптимизированный запрос
+		$this->logger->info("ClickHouse:", ['time' => microtime(true) - $start,'chunks' => count(array_chunk($this->insert->toArray(), 500000)), 'total count' => $this->insert->count()]);
 		$this->insert = new ArrayCollection();
-
-//		$this->connection->exec("OPTIMIZE TABLE {$this->tableName}"); //TODO понять наиболее оптимизированный запрос
 
 		return true;
 
