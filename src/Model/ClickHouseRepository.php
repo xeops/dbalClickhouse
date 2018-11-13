@@ -83,18 +83,16 @@ class ClickHouseRepository
 	}
 
 	/**
-	 * @param Criteria[] $criteria
+	 * @param Criteria $criteria
 	 * @return array
 	 * @throws \Doctrine\DBAL\DBALException
 	 */
-	public function findBy(array $criteria)
+	public function findBy(Criteria $criteria)
 	{
 		$query = (new ClickHouseQuery($this->tableName, $this->connection))->select(["*"]);
 
-		foreach ($criteria as $criterion)
-		{
-			$query->addWhere($criterion);
-		}
+
+		$query->where($criteria);
 
 		$results = $query->execute();
 
@@ -102,7 +100,7 @@ class ClickHouseRepository
 
 		foreach ($results as $result)
 		{
-			$return->add($this->entityClass::newFromSql($result));
+			$return->add($this->entityClass::newFromArray($result));
 		}
 		return $return->toArray();
 
@@ -132,12 +130,36 @@ class ClickHouseRepository
 		return (new ClickHouseQuery($this->tableName, $this->connection))->select($fields);
 	}
 
+	/**
+	 * @param $values
+	 * @param Criteria $criteria
+	 * @return bool false return if rows not found, because method can not be able resolve insert fields from $criteria
+	 * @throws \Doctrine\DBAL\DBALException
+	 */
+	public function update($values, Criteria $criteria)
+	{
+		$start = microtime(true);
+		$this->optimize();
+		$find = false;
+		foreach ((new ClickHouseQuery($this->tableName, $this->connection, true))->select(["*"])->where($criteria)->execute() as $result)
+		{
+			$find = true;
+			$this->insert->add($this->entityClass::newFromArray(array_replace($result, $values)));
+		}
+		if(!$find){
+			return false;
+		}
+		$this->flush(true);
+		$this->logger->info("ClickHouse:", ['update' => microtime(true) - $start]);
+		return true;
+	}
+
 	public function persist(ClickHouseTableBase $object)
 	{
 		$this->insert->add(clone $object);
 	}
 
-	public function flush()
+	public function flush($optimize = false)
 	{
 		if ($this->insert->count() === 0)
 		{
@@ -145,19 +167,29 @@ class ClickHouseRepository
 		}
 		$fields = implode(',', array_keys($this->insert->first()->toSqlArray()));
 		$start = microtime(true);
-
-		foreach (array_chunk($this->insert->toArray(), 500000) as $chunk)
+		$chunks = 0;
+		foreach (array_chunk($this->insert->toArray(), 1000000) as $chunk)
 		{
+			$chunks++;
 			$this->connection->exec("INSERT INTO {$this->tableName} ({$fields}) VALUES (" . implode("),(", array_map(function ($element)
 				{
 					return implode(",", $element->toSqlArray());
 				}, $chunk)) . ")");
 		}
-		$this->connection->exec("OPTIMIZE TABLE {$this->tableName}"); //TODO понять наиболее оптимизированный запрос
-		$this->logger->info("ClickHouse:", ['time' => microtime(true) - $start,'chunks' => count(array_chunk($this->insert->toArray(), 500000)), 'total count' => $this->insert->count()]);
+		if($optimize === true)
+		{
+			$this->optimize();
+		}
+		$this->logger->info("ClickHouse:", ['time' => microtime(true) - $start, 'chunks' => $chunks, 'total count' => $this->insert->count()]);
 		$this->insert = new ArrayCollection();
 
 		return true;
 
+	}
+
+	public function optimize()
+	{
+		$this->connection->exec("OPTIMIZE TABLE " .  $this->tableName); // TODO проврека от двойного запроса
+		$this->connection->exec("OPTIMIZE TABLE " . str_replace("_buffer", '', $this->tableName));
 	}
 }

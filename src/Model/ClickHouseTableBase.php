@@ -21,7 +21,7 @@ abstract class ClickHouseTableBase implements \JsonSerializable
 		/** @var \Doctrine\ORM\Mapping\Table $tableInfo */
 		$tableInfo = $reader->getClassAnnotation($reflector, '\Doctrine\ORM\Mapping\Table');
 
-		return $tableInfo->name;
+		return $tableInfo->name . (isset($tableInfo->options['buffered']) && $tableInfo->options['buffered'] === true ? '_buffer' : '');
 	}
 
 	public static function getTable()
@@ -31,7 +31,7 @@ abstract class ClickHouseTableBase implements \JsonSerializable
 		/** @var \Doctrine\ORM\Mapping\Table $tableInfo */
 		$tableInfo = $reader->getClassAnnotation($reflector, '\Doctrine\ORM\Mapping\Table');
 
-		$newTable = new \Doctrine\DBAL\Schema\Table('IF NOT EXISTS ' . $tableInfo->name);
+		$newTable = new \Doctrine\DBAL\Schema\Table($tableInfo->name);
 
 		$props = $reflector->getProperties(\ReflectionProperty::IS_PRIVATE);
 
@@ -39,33 +39,41 @@ abstract class ClickHouseTableBase implements \JsonSerializable
 		$version = false;
 		$eventDate = false;
 
-		foreach ($props as $property) {
+		foreach ($props as $property)
+		{
 			/** @var \Doctrine\ORM\Mapping\Column $columnDefinition */
 			$columnDefinition = $reader->getPropertyAnnotation($property, '\Doctrine\ORM\Mapping\Column');
-			if (!$columnDefinition) {
+			if (!$columnDefinition)
+			{
 				continue;
 			}
 			$newTable->addColumn($columnDefinition->name, $columnDefinition->type, $columnDefinition->options);
 
-			if ($columnDefinition->unique === true) {
+			if ($columnDefinition->unique === true)
+			{
 				$keys[] = $columnDefinition->name;
 			}
 
-			if ($reader->getPropertyAnnotation($property, '\FOD\DBALClickHouse\Mapping\EventDateColumn')) {
+			if ($reader->getPropertyAnnotation($property, '\FOD\DBALClickHouse\Mapping\EventDateColumn'))
+			{
 				$eventDate = $columnDefinition->name;
 			}
 
-			if ($reader->getPropertyAnnotation($property, '\FOD\DBALClickHouse\Mapping\VersionColumn')) {
+			if ($reader->getPropertyAnnotation($property, '\FOD\DBALClickHouse\Mapping\VersionColumn'))
+			{
 				$version = $columnDefinition->name;
 			}
 		}
 
 		$newTable->setPrimaryKey($keys);
 		$newTable->addOption('engine', $tableInfo->schema);
-		if ($eventDate) {
+		$newTable->addOption('buffered', $tableInfo->options['buffered'] ?? false);
+		if ($eventDate)
+		{
 			$newTable->addOption('eventDateColumn', $eventDate);
 		}
-		if ($version) {
+		if ($version)
+		{
 			$newTable->addOption('versionColumn', $version);
 		}
 		return $newTable;

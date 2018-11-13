@@ -28,6 +28,8 @@ class ClickHouseQuery
 	private $groupBy = [];
 
 	private $limit = false;
+
+	private $final = false;
 	/**
 	 * @var Connection
 	 */
@@ -37,11 +39,13 @@ class ClickHouseQuery
 	 * ClickHouseQuery constructor.
 	 * @param string $tableName
 	 * @param Connection $connection
+	 * @param bool $final
 	 */
-	public function __construct(string $tableName, Connection $connection)
+	public function __construct(string $tableName, Connection $connection, bool $final = false)
 	{
 		$this->tableName = $tableName;
 		$this->connection = $connection;
+		$this->final = $final;
 	}
 
 	/**
@@ -112,7 +116,7 @@ class ClickHouseQuery
 	 */
 	public function execute()
 	{
-		$sql = "SELECT " . implode(',', $this->fields) . " FROM " . $this->tableName;
+		$sql = "SELECT " . implode(',', $this->fields) . " FROM " . $this->tableName . ($this->final ? " FINAL " : '');
 
 		$params = [];
 

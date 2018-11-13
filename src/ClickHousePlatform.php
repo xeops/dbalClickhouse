@@ -643,7 +643,7 @@ class ClickHousePlatform extends AbstractPlatform
         if (isset($options['indexes']) && ! empty($options['indexes'])) {
             throw DBALException::notSupported('uniqueConstraints');
         }
-
+		$sql = [];
         /**
          * MergeTree* specific section
          */
@@ -792,15 +792,24 @@ class ClickHousePlatform extends AbstractPlatform
             }
 
             $engineOptions .= ')';
-        }
 
-        $sql[] = sprintf(
-            'CREATE TABLE %s (%s) ENGINE = %s%s',
-            $tableName,
-            $this->getColumnDeclarationListSQL($columns),
-            $engine,
-            $engineOptions
-        );
+	        $sql[] = sprintf(
+		        'CREATE TABLE IF NOT EXISTS  %s (%s) ENGINE = %s%s',
+		        $tableName,
+		        $this->getColumnDeclarationListSQL($columns),
+		        $engine,
+		        $engineOptions
+	        );
+	        if($options['buffered'] === true)
+	        {
+		        //Buffer(database, table, num_layers, min_time, max_time, min_rows, max_rows, min_bytes, max_bytes)
+		        //TODO поддержка имени базы данных
+		        $sql[] = sprintf(
+			        "CREATE TABLE {$tableName}_buffer AS {$tableName} ENGINE = Buffer(default, {$tableName}, 16, 10, 100, 10000, 1000000, 10000000, 100000000)",
+			        $tableName
+		        ); //TODO поддержка параметров
+	        }
+        }
 
         return $sql;
     }
