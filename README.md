@@ -42,22 +42,63 @@ $conn = \Doctrine\DBAL\DriverManager::getConnection($connectionParams, new \Doct
 configure...
 ```yml
 # app/config/config.yml
+# Doctrine Configuration
 doctrine:
     dbal:
+        default_connection:   default
         connections:
+	    # mysql as default
+            default:
+                driver:   pdo_mysql
+                host:     "%database_host%"
+                port:     "%database_port%"
+                dbname:   "%database_name%"
+                user:     "%database_user%"
+                password: "%database_password%"
+                charset:  UTF8
+                mapping_types:
+                    enum: string
             clickhouse:
-                host:     localhost
-                port:     8123
-                user:     default
-                password: ""
-                dbname:   default
+                host:     "%clickhouse_host%"
+                port:     "%clickhouse_port%"
+                user:     "%clickhouse_user%"
+                password: "%clickhouse_password%"
+                dbname:   "%clickhouse_dbname%"
                 driver_class: FOD\DBALClickHouse\Driver
                 wrapper_class: FOD\DBALClickHouse\Connection
-                options:
-                    enable_http_compression: 1
-                    max_execution_time: 60
-            #mysql:
-            #   ...
+        types:
+            array(int8): FOD\DBALClickHouse\Types\ArrayInt8Type
+            array(int16): FOD\DBALClickHouse\Types\ArrayInt16Type
+            array(int32): FOD\DBALClickHouse\Types\ArrayInt32Type
+            array(int64): FOD\DBALClickHouse\Types\ArrayInt64Type
+            array(uint8): FOD\DBALClickHouse\Types\ArrayUInt8Type
+            array(uint16): FOD\DBALClickHouse\Types\ArrayUInt16Type
+            array(uint32): FOD\DBALClickHouse\Types\ArrayUInt32Type
+            array(uint64): FOD\DBALClickHouse\Types\ArrayUInt64Type
+            array(float32): FOD\DBALClickHouse\Types\ArrayFloat32Type
+            array(float64): FOD\DBALClickHouse\Types\ArrayFloat64Type
+            array(string): FOD\DBALClickHouse\Types\ArrayStringType
+            array(datetime): FOD\DBALClickHouse\Types\ArrayDateTimeType
+            array(date): FOD\DBALClickHouse\Types\ArrayDateType
+            date_id: FOD\DBALClickHouse\Types\DateIdType # ovverided type for unique hash
+            float: FOD\DBALClickHouse\Types\FloatType # type dismatch, because standart driver set float to string
+    orm:
+        auto_generate_proxy_classes: "%kernel.debug%"
+        default_entity_manager: default
+        entity_managers:
+            default:
+                connection: default
+                naming_strategy: doctrine.orm.naming_strategy.underscore
+                auto_mapping: true
+                dql:
+                    datetime_functions:
+                        date_format: DoctrineExtensions\Query\Mysql\DateFormat
+            clickhouse:
+                connection: clickhouse
+                naming_strategy: doctrine.orm.naming_strategy.underscore
+                mappings:
+                    KpiMetricBundle:
+                        type: annotation
 ```
 ...and get from the service container
 ```php
@@ -145,9 +186,22 @@ $qb
 
 $qb->execute();
 ```
+```php
+// 4 via entity manager
+$orm = $this->getContainer()->get('doctrine.orm.clickhouse_entity_manager');
+$new_object = new \AcmeBundle\Entity\AcmeTable();
+$new_object->setId(44)->setDate(new \DateTimeToString());
+$orm->persist($new_object);
+$orm->flush();
+
+
+```
 ### Select
 ```php
-echo $conn->fetchColumn('SELECT SUM(views) FROM articles');
+$orm = $this->getContainer()->get('doctrine.orm.clickhouse_entity_manager');
+$repo = $orm->getRepository('AcmeBundle:AcmeTable');
+$object = $repo->findOneBy(['id' => 45, 'date' => new \DateTime('2019-02-07')]);
+echo $output->getDate();
 ```
 
 ### Select via Dynamic Parameters and Prepared Statements
@@ -193,6 +247,8 @@ doctrine:
             array(string): FOD\DBALClickHouse\Types\ArrayStringType
             array(datetime): FOD\DBALClickHouse\Types\ArrayDateTimeType
             array(date): FOD\DBALClickHouse\Types\ArrayDateType
+	    date_id: FOD\DBALClickHouse\Types\DateIdType # ovverided type for unique hash
+            float: FOD\DBALClickHouse\Types\FloatType # type dismatch, because standart driver set float to string
 ```
 
 Additional type `BigIntType` helps you to store bigint values as [Int64/UInt64](https://clickhouse.yandex/reference_en.html#UInt8,%20UInt16,%20UInt32,%20UInt64,%20Int8,%20Int16,%20Int32,%20Int64) value type in ClickHouse.
@@ -245,55 +301,3 @@ class EventTable extends ClickHouseTableBase
 
 ```
 >**unique=true** служит для обозначения первичных ключей. В clickhouse нет уникальных полей
-
-
-
-
-Для каждой таблицы также необходим репозиторий, выступающий в качестве сервиса для общения с базой данных
-
-```php
-/**
- * Class TableNameRepository
- * @ClickHouseEntityTarget(entityClass="{{REFERENCE_TO_TABLE_NAME_CLASS}}")
- */
-class TableNameRepository extends ClickHouseRepository
-{
-
-}
-```
-#### Регистрация сервиса репозитория
-Процесс связи таблицы и базы данных возможен только с помощью сервиса репозитория
-```yaml
-   bundle.table_repository:
-        class: BundleNameBundle\Model\ClickHouseTables\NameOfTAbleTableRepository
-        arguments: ['@logger', '@doctrine.dbal.clickhouse_connection']
-        tags:
-            - {name: kernel.event_listener, event: 'system.update', method: createTable}
-
-```
-#### INSERT
-Вы всегда можете вставить записи вручную, воспользовавшись [официальной документацией](https://github.com/FriendsOfDoctrine/dbal-clickhouse)
-```php
-    foreach($data as $item)
-    {
-        $object = (new TableName())->set…()->…;
-        $this->repoService->persist($object);
-    }
-    $this->repoService->flush();
-```
-
-#### SELECT
-
-Выборка данных производится с помощью массива обьектов класса Criteria
-
-```php
-$criteria = Criteria::create()
-	->andWhere(Criteria::expr()->eq('store_configuration_id', $store->getId()))
-	->andWhere(Criteria::expr()->gte('created', $filter->getDateFrom()->format('Y-m-d')))
-	->andWhere(Criteria::expr()->lte('created', $filter->getDateTo()->format('Y-m-d')));
-```
-Далее получаем данные
-
-```php
-$responce = $this->get('bundle.table_repository')->findBy($criteries);
-```
