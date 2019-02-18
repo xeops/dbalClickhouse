@@ -21,7 +21,20 @@ abstract class ClickHouseTableBase implements \JsonSerializable
 		/** @var \Doctrine\ORM\Mapping\Table $tableInfo */
 		$tableInfo = $reader->getClassAnnotation($reflector, '\Doctrine\ORM\Mapping\Table');
 
-		return $tableInfo->name . (isset($tableInfo->options['buffered']) && $tableInfo->options['buffered'] === true ? '_buffer' : '');
+		return $tableInfo->name;
+	}
+
+	/**
+	 * @return \Doctrine\ORM\Mapping\Table
+	 * @throws \Doctrine\Common\Annotations\AnnotationException
+	 * @throws \ReflectionException
+	 */
+	public static function getTableInfo()
+	{
+		$reader = new AnnotationReader();
+		$reflector = new \ReflectionClass(static::class);
+		/** @var \Doctrine\ORM\Mapping\Table $tableInfo */
+		return $reader->getClassAnnotation($reflector, '\Doctrine\ORM\Mapping\Table');
 	}
 
 	public static function getTable()
@@ -78,24 +91,5 @@ abstract class ClickHouseTableBase implements \JsonSerializable
 		}
 		return $newTable;
 	}
-
-	/**
-	 * @param array $array
-	 * @return $this
-	 */
-	abstract public static function newFromArray($array);
-
-	/**
-	 * @return array
-	 * @throws \Doctrine\Common\Annotations\AnnotationException
-	 * @throws \ReflectionException
-	 */
-	abstract public function toSqlArray();
-
-	/**
-	 * @param array $array
-	 * @return $this
-	 */
-	abstract public static function newFromSql($array);
 
 }

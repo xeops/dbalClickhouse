@@ -15,6 +15,8 @@ declare(strict_types=1);
 namespace FOD\DBALClickHouse;
 
 use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Exception\InvalidArgumentException;
+use Doctrine\DBAL\ParameterType;
 use function strtoupper;
 use function substr;
 use function trim;
@@ -29,23 +31,70 @@ class Connection extends \Doctrine\DBAL\Connection
      */
     public function executeUpdate($query, array $params = [], array $types = []) : int
     {
-        // ClickHouse has no UPDATE or DELETE statements
-        $command = strtoupper(substr(trim($query), 0, 6));
-        if ($command === 'UPDATE' || $command === 'DELETE') {
-            throw new ClickHouseException('UPDATE and DELETE are not allowed in ClickHouse');
-        }
-
-        return parent::executeUpdate($query, $params, $types);
+    	$query = str_replace("SET", "UPDATE", str_replace("UPDATE", "", $query));
+    	foreach ($types as &$type)
+    	{
+    		$type = $type === 'float' ? 'integer' : $type;
+	    }
+    	return parent::executeUpdate("ALTER TABLE {$query}", $params, $types);
     }
 
-    /**
-     * @throws DBALException
-     */
-    public function delete($tableExpression, array $identifier, array $types = []) : void
+	/**
+	 * {@inheritDoc}
+	 */
+    public function delete($tableExpression, array $identifier, array $types = []) : int
     {
-        throw DBALException::notSupported(__METHOD__);
-    }
+	    if (empty($identifier)) {
+		    throw InvalidArgumentException::fromEmptyCriteria();
+	    }
 
+	    list($columns, $values, $conditions) = $this->gatherConditions($identifier);
+
+	    return $this->executeUpdate(
+		    'ALTER TABLE ' . $tableExpression . ' DELETE WHERE ' . implode(' AND ', $conditions),
+		    $values,
+		    is_string(key($types)) ? $this->extractTypeValues($columns, $types) : $types
+	    );
+
+    }
+	/**
+	 * Extract ordered type list from an ordered column list and type map.
+	 *
+	 * @param array $columnList
+	 * @param array $types
+	 *
+	 * @return array
+	 */
+	private function extractTypeValues(array $columnList, array $types)
+	{
+		$typeValues = [];
+
+		foreach ($columnList as $columnIndex => $columnName) {
+			$typeValues[] = $types[$columnName] ?? ParameterType::STRING;
+		}
+
+		return $typeValues;
+	}
+
+	private function gatherConditions(array $identifiers)
+	{
+		$columns = [];
+		$values = [];
+		$conditions = [];
+
+		foreach ($identifiers as $columnName => $value) {
+			if (null === $value) {
+				$conditions[] = $this->getDatabasePlatform()->getIsNullExpression($columnName);
+				continue;
+			}
+
+			$columns[] = $columnName;
+			$values[] = $value;
+			$conditions[] = $columnName . ' = ?';
+		}
+
+		return [$columns, $values, $conditions];
+	}
     /**
      * @throws DBALException
      */
@@ -111,7 +160,7 @@ class Connection extends \Doctrine\DBAL\Connection
      */
     public function beginTransaction() : void
     {
-        throw DBALException::notSupported(__METHOD__);
+	     return;
     }
 
     /**
@@ -119,7 +168,7 @@ class Connection extends \Doctrine\DBAL\Connection
      */
     public function commit() : void
     {
-        throw DBALException::notSupported(__METHOD__);
+      return;
     }
 
     /**
@@ -127,7 +176,7 @@ class Connection extends \Doctrine\DBAL\Connection
      */
     public function rollBack() : void
     {
-        throw DBALException::notSupported(__METHOD__);
+      return;
     }
 
     /**

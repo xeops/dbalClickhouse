@@ -572,13 +572,13 @@ class ClickHousePlatform extends AbstractPlatform
         throw DBALException::notSupported(__METHOD__);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function appendLockHint($fromClause, $lockMode)
-    {
-        throw DBALException::notSupported(__METHOD__);
-    }
+//    /**
+//     * {@inheritDoc}
+//     */
+//    public function appendLockHint($fromClause, $lockMode)
+//    {
+//        //throw DBALException::notSupported(__METHOD__);
+//    }
 
     /**
      * {@inheritDoc}
@@ -792,25 +792,26 @@ class ClickHousePlatform extends AbstractPlatform
             }
 
             $engineOptions .= ')';
-
+			//TODO поддержка парционирования через определение таблицы
 	        $sql[] = sprintf(
-		        'CREATE TABLE IF NOT EXISTS  %s (%s) ENGINE = %s%s',
+		        'CREATE TABLE IF NOT EXISTS  %s (%s) ENGINE = %s([\'%s\']) PARTITION BY toYYYYMM(%s) ORDER BY (%s) SETTINGS index_granularity=%s',
 		        $tableName,
 		        $this->getColumnDeclarationListSQL($columns),
 		        $engine,
-		        $engineOptions
+		        $columns[$options['versionColumn']]['name'],
+		        $eventDateColumnName,
+		        implode(', ', array_unique($primaryIndex)),
+		        $indexGranularity
 	        );
 	        if($options['buffered'] === true)
 	        {
 		        //Buffer(database, table, num_layers, min_time, max_time, min_rows, max_rows, min_bytes, max_bytes)
-		        //TODO поддержка имени базы данных
 		        $sql[] = sprintf(
-			        "CREATE TABLE {$tableName}_buffer AS {$tableName} ENGINE = Buffer(default, {$tableName}, 16, 10, 100, 10000, 1000000, 10000000, 100000000)",
+			        "CREATE TABLE IF NOT EXISTS {$tableName}_buffer AS {$tableName} ENGINE = Buffer(default, {$tableName}, 16, 1, 10, 1, 10, 1000000, 10000000)",
 			        $tableName
 		        ); //TODO поддержка параметров
 	        }
         }
-
         return $sql;
     }
 
@@ -829,8 +830,13 @@ class ClickHousePlatform extends AbstractPlatform
     {
         $columnSql  = [];
         $queryParts = [];
-        if ($diff->newName !== false || ! empty($diff->renamedColumns)) {
+        if ($diff->newName !== false) {
             throw DBALException::notSupported('RENAME COLUMN');
+        }
+        foreach ($diff->renamedColumns as $column)
+        {
+	        $queryParts[] = 'DROP COLUMN ' . $column->getQuotedName($this);
+	        $queryParts[] = 'ADD COLUMN ' . $this->getColumnDeclarationSQL($column->getQuotedName($this), $column->toArray());
         }
 
         foreach ($diff->addedColumns as $column) {
@@ -1066,7 +1072,7 @@ class ClickHousePlatform extends AbstractPlatform
      */
     public function getListTablesSQL() : string
     {
-        return "SELECT database, name FROM system.tables WHERE database != 'system' AND engine != 'View'";
+    	return "show tables";
     }
 
     /**
