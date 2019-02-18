@@ -31,7 +31,7 @@ class Connection extends \Doctrine\DBAL\Connection
      */
     public function executeUpdate($query, array $params = [], array $types = []) : int
     {
-    	$query = str_replace("SET", "UPDATE", str_replace("UPDATE", "", $query));
+    	$query = str_replace(" SET ", " UPDATE ", str_replace("UPDATE ", " ", $query));
     	foreach ($types as &$type)
     	{
     		$type = $type === 'float' ? 'integer' : $type;
