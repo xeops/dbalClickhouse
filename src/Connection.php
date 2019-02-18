@@ -51,7 +51,7 @@ class Connection extends \Doctrine\DBAL\Connection
 	    list($columns, $values, $conditions) = $this->gatherConditions($identifier);
 
 	    return $this->executeUpdate(
-		    'ALTER TABLE ' . $tableExpression . ' DELETE WHERE ' . implode(' AND ', $conditions),
+		    $tableExpression . ' DELETE WHERE ' . implode(' AND ', $conditions),
 		    $values,
 		    is_string(key($types)) ? $this->extractTypeValues($columns, $types) : $types
 	    );
