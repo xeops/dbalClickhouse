@@ -14,15 +14,8 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
 
 class FloatType extends \Doctrine\DBAL\Types\FloatType
 {
-	public function convertToDatabaseValue($value, AbstractPlatform $platform)
-	{
-		return floatval($value);
-	}
-
 	public function getBindingType()
 	{
 		return ParameterType::INTEGER;
 	}
-
-
 }
