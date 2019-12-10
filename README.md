@@ -97,7 +97,7 @@ doctrine:
                 connection: clickhouse
                 naming_strategy: doctrine.orm.naming_strategy.underscore
                 mappings:
-                    KpiMetricBundle:
+                    AcmeBundle:
                         type: annotation
 ```
 ...and get from the service container

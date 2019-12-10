@@ -656,6 +656,12 @@ class ClickHousePlatform extends AbstractPlatform
                 'AggregatingMergeTree',
                 'ReplacingMergeTree',
                 'GraphiteMergeTree',
+	            'ReplicatedMergeTree',
+	            'ReplicatedCollapsingMergeTree',
+	            'ReplicatedSummingMergeTree',
+	            'ReplicatedAggregatingMergeTree',
+	            'ReplicatedReplacingMergeTree',
+	            'ReplicatedGraphiteMergeTree',
             ],
             true
         )) {
@@ -767,7 +773,7 @@ class ClickHousePlatform extends AbstractPlatform
             /**
              * any specific MergeTree* table parameters
              */
-            if (($engine === 'ReplacingMergeTree' || $engine ==='CollapsingMergeTree') && ! empty($options['versionColumn'])) {
+            if (in_array($engine, ['ReplacingMergeTree', 'CollapsingMergeTree','ReplicatedReplacingMergeTree', 'ReplicatedCollapsingMergeTree']) && ! empty($options['versionColumn'])) {
                 if (! isset($columns[$options['versionColumn']])) {
                     throw new \Exception(
                         'If you specify `versionColumn` for ReplacingMergeTree table -- 
