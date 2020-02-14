@@ -824,6 +824,7 @@ class ClickHousePlatform extends AbstractPlatform
 			$engineOptions .= ')';
 
 			$engineOptions = "";
+			$samplingExpression= 'SAMPLE BY ';
 			if ($engine === 'ReplacingMergeTree' || $engine === 'ReplicatedReplacingMergeTree')
 			{
 				$engineOptions = sprintf("[% s]", $columns[$options['versionColumn']]['name']);
@@ -834,18 +835,21 @@ class ClickHousePlatform extends AbstractPlatform
 			}
 			if(strpos($engine, 'Replicated') === 0)
 			{
-				//$engineOptions  = '/clickhouse/tables/{layer}-{shard}/table_name', '{replica}'
+				$engineOptions  = "'/clickhouse/tables/{layer}-{shard}/$tableName', '{replica}', " . $engineOptions;
+				$samplingExpression .= $options['sampleBy'];
+				$primaryIndex[] = $options['sampleBy'];
 			}
 
 			//TODO поддержка парционирования через определение таблицы
 			$sql[] = sprintf(
-				'CREATE TABLE IF NOT EXISTS  %s (%s) ENGINE = %s(%s) PARTITION BY toYYYYMM(%s) ORDER BY (%s) SETTINGS index_granularity=%s',
+				'CREATE TABLE IF NOT EXISTS  %s (%s) ENGINE = %s(%s) PARTITION BY toYYYYMM(%s) ORDER BY (%s) %s SETTINGS index_granularity=%s',
 				$tableName,
 				$this->getColumnDeclarationListSQL($columns),
 				$engine,
 				$engineOptions,
 				$eventDateColumnName,
 				implode(', ', array_unique($primaryIndex)),
+				$samplingExpression,
 				$indexGranularity
 			);
 			if(isset($options['buffered']) && $options['buffered'] === true)
