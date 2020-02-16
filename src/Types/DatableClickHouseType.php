@@ -18,4 +18,5 @@ interface DatableClickHouseType extends ClickHouseType
 {
     public const TYPE_DATE      = 'Date';
     public const TYPE_DATE_TIME = 'DateTime';
+    public const TYPE_UUID = 'UUID';
 }

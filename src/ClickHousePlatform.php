@@ -190,6 +190,7 @@ class ClickHousePlatform extends AbstractPlatform
 			'array(nullable(string))' => 'array',
 			'array(nullable(date))' => 'array',
 			'array(nullable(datetime))' => 'array',
+			'uuid' => 'UUID'
 		];
 	}
 
@@ -824,7 +825,7 @@ class ClickHousePlatform extends AbstractPlatform
 			$engineOptions .= ')';
 
 			$engineOptions = "";
-			$samplingExpression= 'SAMPLE BY ';
+			$samplingExpression= '';
 			if ($engine === 'ReplacingMergeTree' || $engine === 'ReplicatedReplacingMergeTree')
 			{
 				$engineOptions = sprintf("[% s]", $columns[$options['versionColumn']]['name']);
@@ -836,7 +837,7 @@ class ClickHousePlatform extends AbstractPlatform
 			if(strpos($engine, 'Replicated') === 0)
 			{
 				$engineOptions  = "'/clickhouse/tables/{layer}-{shard}/$tableName', '{replica}', " . $engineOptions;
-				$samplingExpression .= $options['sampleBy'];
+				$samplingExpression = "SAMPLE BY  {$options['sampleBy']}";
 				$primaryIndex[] = $options['sampleBy'];
 			}
 
