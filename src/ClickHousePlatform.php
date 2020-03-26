@@ -828,7 +828,7 @@ class ClickHousePlatform extends AbstractPlatform
 			$samplingExpression= '';
 			if ($engine === 'ReplacingMergeTree' || $engine === 'ReplicatedReplacingMergeTree')
 			{
-				$engineOptions = sprintf("[% s]", $columns[$options['versionColumn']]['name']);
+				$engineOptions = sprintf("['%s']", $columns[$options['versionColumn']]['name']);
 			}
 			if ($engine === 'CollapsingMergeTree' || $engine === 'ReplicatedCollapsingMergeTree')
 			{
