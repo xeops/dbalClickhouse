@@ -825,18 +825,18 @@ class ClickHousePlatform extends AbstractPlatform
 			$engineOptions .= ')';
 
 			$engineOptions = "";
-			$samplingExpression= '';
+			$samplingExpression = '';
 			if ($engine === 'ReplacingMergeTree' || $engine === 'ReplicatedReplacingMergeTree')
 			{
-				$engineOptions = sprintf("['%s']", $columns[$options['versionColumn']]['name']);
+				$engineOptions = $columns[$options['versionColumn']]['name'];
 			}
 			if ($engine === 'CollapsingMergeTree' || $engine === 'ReplicatedCollapsingMergeTree')
 			{
-				$engineOptions = sprintf("%s", $columns[$options['signColumn']]['name']);
+				$engineOptions = $columns[$options['signColumn']]['name'];
 			}
-			if(strpos($engine, 'Replicated') === 0)
+			if (strpos($engine, 'Replicated') === 0 && $this->getName())
 			{
-				$engineOptions  = "'/clickhouse/tables/{layer}-{shard}/$tableName', '{replica}', " . $engineOptions;
+				$engineOptions = "'/clickhouse/tables/{layer}-{shard}/$tableName', '{replica}', " . $engineOptions;
 				$samplingExpression = "SAMPLE BY  {$options['sampleBy']}";
 				$primaryIndex[] = $options['sampleBy'];
 			}
@@ -853,7 +853,7 @@ class ClickHousePlatform extends AbstractPlatform
 				$samplingExpression,
 				$indexGranularity
 			);
-			if(isset($options['buffered']) && $options['buffered'] === true)
+			if (isset($options['buffered']) && $options['buffered'] === true)
 			{
 				//Buffer(database, table, num_layers, min_time, max_time, min_rows, max_rows, min_bytes, max_bytes)
 				$sql[] = sprintf(
