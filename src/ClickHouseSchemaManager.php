@@ -157,4 +157,19 @@ class ClickHouseSchemaManager extends AbstractSchemaManager
     {
         return $database['name'];
     }
+
+	/**
+	 * Returns a list of all tables in the current database.
+	 *
+	 * @return array
+	 */
+	public function listTableNames()
+	{
+		$sql = $this->_platform->getListTablesSQL() . " FROM " . $this->_conn->getDatabase();
+
+		$tables = $this->_conn->fetchAll($sql);
+		$tableNames = $this->_getPortableTablesList($tables);
+
+		return $this->filterAssetNames($tableNames);
+	}
 }
