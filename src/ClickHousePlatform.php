@@ -671,6 +671,8 @@ class ClickHousePlatform extends AbstractPlatform
 				'ReplicatedAggregatingMergeTree',
 				'ReplicatedReplacingMergeTree',
 				'ReplicatedGraphiteMergeTree',
+				'VersionedCollapsingMergeTree',
+				'ReplicatedVersionedCollapsingMergeTree'
 			],
 			true
 		))
@@ -796,7 +798,15 @@ class ClickHousePlatform extends AbstractPlatform
 			/**
 			 * any specific MergeTree* table parameters
 			 */
-			if (in_array($engine, ['ReplacingMergeTree', 'CollapsingMergeTree', 'ReplicatedReplacingMergeTree', 'ReplicatedCollapsingMergeTree']) && !empty($options['versionColumn']))
+			if (in_array($engine, [
+				'ReplacingMergeTree',
+					'CollapsingMergeTree',
+					'ReplicatedReplacingMergeTree',
+					'ReplicatedCollapsingMergeTree',
+					'VersionedCollapsingMergeTree',
+					'ReplicatedVersionedCollapsingMergeTree'
+
+				]) && !empty($options['versionColumn']))
 			{
 				if (!isset($columns[$options['versionColumn']]))
 				{
@@ -834,6 +844,11 @@ class ClickHousePlatform extends AbstractPlatform
 			{
 				$engineOptions = $columns[$options['signColumn']]['name'];
 			}
+			if ($engine === 'VersionedCollapsingMergeTree' || $engine === 'ReplicatedVersionedCollapsingMergeTree')
+			{
+				$engineOptions = "{$columns[$options['signColumn']]['name']},{$columns[$options['versionColumn']]['name']}";
+			}
+
 			if (strpos($engine, 'Replicated') === 0 && $this->getName())
 			{
 				$engineOptions = "'/clickhouse/tables/{layer}-{shard}/$tableName', '{replica}', " . $engineOptions;
