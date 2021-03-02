@@ -15,9 +15,12 @@ use Doctrine\DBAL\Types\DateType;
 
 class DateIdType extends DateType
 {
+
+	const NAME = 'date_id';
+
 	public function getName()
 	{
-		return "date_id";
+		return static::NAME;
 	}
 
 	public function convertToPHPValue($value, AbstractPlatform $platform)

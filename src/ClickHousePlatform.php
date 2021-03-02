@@ -34,6 +34,7 @@ use Doctrine\DBAL\Types\TextType;
 use Doctrine\DBAL\Types\Type;
 use FOD\DBALClickHouse\Types\BitNumericalClickHouseType;
 use FOD\DBALClickHouse\Types\DatableClickHouseType;
+use FOD\DBALClickHouse\Types\DateIdType;
 use FOD\DBALClickHouse\Types\NumericalClickHouseType;
 use FOD\DBALClickHouse\Types\StringClickHouseType;
 use FOD\DBALClickHouse\Types\UnsignedNumericalClickHouseType;
@@ -799,7 +800,7 @@ class ClickHousePlatform extends AbstractPlatform
 			 * any specific MergeTree* table parameters
 			 */
 			if (in_array($engine, [
-				'ReplacingMergeTree',
+					'ReplacingMergeTree',
 					'CollapsingMergeTree',
 					'ReplicatedReplacingMergeTree',
 					'ReplicatedCollapsingMergeTree',
@@ -929,9 +930,26 @@ class ClickHousePlatform extends AbstractPlatform
 			$queryParts[] = 'ADD COLUMN ' . $this->getColumnDeclarationSQL($column->getQuotedName($this), $columnArray);
 		}
 
+		$primary = [];
+		foreach ($diff->addedIndexes as $index)
+		{
+			if(!$index->isPrimary())
+			{
+				continue;
+			}
+			foreach ($index->getColumns() as $column)
+			{
+				$primary[] = $column;
+			}
+		}
 		foreach ($diff->removedColumns as $column)
 		{
 			if ($this->onSchemaAlterTableRemoveColumn($column, $diff, $columnSql))
+			{
+				continue;
+			}
+
+			if(in_array($column->getName(), $primary))
 			{
 				continue;
 			}
@@ -957,7 +975,14 @@ class ClickHousePlatform extends AbstractPlatform
 			{
 				continue;
 			}
-
+			if($columnDiff->column->getType()->getName() === $columnDiff->fromColumn->getType()->getName())
+			{
+				continue;
+			}
+			if($columnDiff->column->getType()->getName() === DateIdType::NAME)
+			{
+				continue;
+			}
 			$queryParts[] = 'MODIFY COLUMN ' . $this->getColumnDeclarationSQL(
 					$column->getQuotedName($this),
 					$columnArray
