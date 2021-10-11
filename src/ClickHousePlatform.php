@@ -642,7 +642,6 @@ class ClickHousePlatform extends AbstractPlatform
 	protected function _getCreateTableSQL($tableName, array $columns, array $options = []): array
 	{
 		$engine = !empty($options['engine']) ? $options['engine'] : 'MergeTree';
-		$engineOptions = '';
 
 		if (isset($options['uniqueConstraints']) && !empty($options['uniqueConstraints']))
 		{
@@ -657,26 +656,7 @@ class ClickHousePlatform extends AbstractPlatform
 		/**
 		 * MergeTree* specific section
 		 */
-		if (in_array(
-			$engine,
-			[
-				'MergeTree',
-				'CollapsingMergeTree',
-				'SummingMergeTree',
-				'AggregatingMergeTree',
-				'ReplacingMergeTree',
-				'GraphiteMergeTree',
-				'ReplicatedMergeTree',
-				'ReplicatedCollapsingMergeTree',
-				'ReplicatedSummingMergeTree',
-				'ReplicatedAggregatingMergeTree',
-				'ReplicatedReplacingMergeTree',
-				'ReplicatedGraphiteMergeTree',
-				'VersionedCollapsingMergeTree',
-				'ReplicatedVersionedCollapsingMergeTree'
-			],
-			true
-		))
+		if (strpos($engine, 'MergeTree'))
 		{
 			$indexGranularity = !empty($options['indexGranularity']) ? $options['indexGranularity'] : 8192;
 			$samplingExpression = '';
@@ -853,14 +833,18 @@ class ClickHousePlatform extends AbstractPlatform
 			if (strpos($engine, 'Replicated') === 0 && $this->getName())
 			{
 				$engineOptions = "'/clickhouse/tables/{layer}-{shard}/$tableName', '{replica}', " . $engineOptions;
-				$samplingExpression = "SAMPLE BY  {$options['sampleBy']}";
-				$primaryIndex[] = $options['sampleBy'];
+				if(!empty($options['sampleBy']))
+				{
+					$samplingExpression = "SAMPLE BY  {$options['sampleBy']}";
+					$primaryIndex[] = $options['sampleBy'];
+				}
 			}
 
 			//TODO поддержка парционирования через определение таблицы
 			$sql[] = sprintf(
-				'CREATE TABLE IF NOT EXISTS  %s (%s) ENGINE = %s(%s) PARTITION BY toYYYYMM(%s) ORDER BY (%s) %s SETTINGS index_granularity=%s',
+				'CREATE TABLE IF NOT EXISTS  %s %s (%s)  ENGINE = %s(%s) PARTITION BY toYYYYMM(%s) ORDER BY (%s) %s SETTINGS index_granularity=%s',
 				$tableName,
+				($options['cluster'] ?? false) ? "ON CLUSTER '{$options['cluster']}'" : "",
 				$this->getColumnDeclarationListSQL($columns),
 				$engine,
 				$engineOptions,
@@ -869,27 +853,39 @@ class ClickHousePlatform extends AbstractPlatform
 				$samplingExpression,
 				$indexGranularity
 			);
-			if (isset($options['buffered']) && $options['buffered'] === true)
-			{
-				//Buffer(database, table, num_layers, min_time, max_time, min_rows, max_rows, min_bytes, max_bytes)
-				$sql[] = sprintf(
-					"CREATE TABLE IF NOT EXISTS {$tableName}_buffer AS {$tableName} ENGINE = Buffer(default, {$tableName}, 16, 1, 10, 1, 10, 1000000, 10000000)",
-					$tableName
-				); //TODO поддержка параметров
-			}
-
 
 		}
 		elseif ($engine === 'Buffer')
 		{
-			$source = $options['source'];
+
 			// -----------------------------------------------
 			// Buffer(database, table, num_layers, min_time, max_time, min_rows, max_rows, min_bytes, max_bytes)
 			// -----------------------------------------------
 			$sql[] = sprintf(
-				"CREATE TABLE IF NOT EXISTS {$tableName} AS {$source} ENGINE = Buffer(default, {$source}, 16, 1, 10, 1, 10, 1000000, 10000000)",
-				$tableName
-			); //TODO поддержка параметров
+				"CREATE TABLE IF NOT EXISTS %s AS {%s} ENGINE = Buffer(default, %s, %s, %s, %s, %s, %s, %s, %s)",
+				$tableName,
+				$options['table'],
+				$options['table'],
+				$options['numLayers'],
+				$options['minTime'],
+				$options['maxTime'],
+				$options['minRows'],
+				$options['maxRows'],
+				$options['minBytes'],
+				$options['maxBytes']
+			);
+		}
+		elseif ($engine === 'Distributed')
+		{
+
+			$sql[] = sprintf("CREATE TABLE %s (%s) ENGINE = Distributed('%s', '%s', '%s', %s)",
+				$tableName,
+				$this->getColumnDeclarationListSQL($columns),
+				$options['cluster'],
+				$options['database'],
+				$options['table'],
+				$options['shardingKey']
+			);
 		}
 		return $sql;
 	}
@@ -933,7 +929,7 @@ class ClickHousePlatform extends AbstractPlatform
 		$primary = [];
 		foreach ($diff->addedIndexes as $index)
 		{
-			if(!$index->isPrimary())
+			if (!$index->isPrimary())
 			{
 				continue;
 			}
@@ -949,7 +945,7 @@ class ClickHousePlatform extends AbstractPlatform
 				continue;
 			}
 
-			if(in_array($column->getName(), $primary))
+			if (in_array($column->getName(), $primary))
 			{
 				continue;
 			}
@@ -975,11 +971,11 @@ class ClickHousePlatform extends AbstractPlatform
 			{
 				continue;
 			}
-			if($columnDiff->column->getType()->getName() === $columnDiff->fromColumn->getType()->getName())
+			if ($columnDiff->column->getType()->getName() === $columnDiff->fromColumn->getType()->getName())
 			{
 				continue;
 			}
-			if($columnDiff->column->getType()->getName() === DateIdType::NAME)
+			if ($columnDiff->column->getType()->getName() === DateIdType::NAME)
 			{
 				continue;
 			}
