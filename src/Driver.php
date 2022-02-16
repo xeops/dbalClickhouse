@@ -15,7 +15,6 @@ declare(strict_types=1);
 namespace FOD\DBALClickHouse;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Driver\API\ExceptionConverter;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Exception;
 
@@ -96,9 +95,4 @@ class Driver implements \Doctrine\DBAL\Driver
 
         return $conn->fetchColumn('SELECT currentDatabase() as dbname');
     }
-
-	public function getExceptionConverter(): ExceptionConverter
-	{
-		throw new Exception("Not implemented");
-	}
 }
