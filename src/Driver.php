@@ -15,8 +15,6 @@ declare(strict_types=1);
 namespace FOD\DBALClickHouse;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Exception;
 
 /**
  * ClickHouse Driver
