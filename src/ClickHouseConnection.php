@@ -17,7 +17,6 @@ namespace FOD\DBALClickHouse;
 use ClickHouseDB\Client as Smi2CHClient;
 use ClickHouseDB\Exception\TransportException;
 use Doctrine\DBAL\Driver\Connection;
-use Doctrine\DBAL\Driver\PingableConnection;
 use Doctrine\DBAL\Driver\ServerInfoAwareConnection;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
@@ -27,7 +26,7 @@ use function func_get_args;
 /**
  * ClickHouse implementation for the Connection interface.
  */
-class ClickHouseConnection implements Connection, PingableConnection, ServerInfoAwareConnection
+class ClickHouseConnection implements Connection, ServerInfoAwareConnection
 {
     /** @var Smi2CHClient */
     protected $smi2CHClient;
