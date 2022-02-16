@@ -29,7 +29,8 @@
         "ext-PDO": "*",
         "ext-pcre": "*",
         "smi2/phpclickhouse": "^1.0",
-        "symfony/orm-pack": "^2.1.0"
+        "symfony/orm-pack": "2.1.0",
+        "doctrine/dbal": "~2.13.1"
     },
     "require-dev": {
         "doctrine/coding-standard": "^9.0.0",
