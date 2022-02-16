@@ -71,9 +71,9 @@ class Driver implements \Doctrine\DBAL\Driver
     /**
      * {@inheritDoc}
      */
-    public function getSchemaManager(Connection $conn, AbstractPlatform $platform)
+    public function getSchemaManager(Connection $conn)
     {
-        return new ClickHouseSchemaManager($conn, $platform);
+        return new ClickHouseSchemaManager($conn);
     }
 
     /**
