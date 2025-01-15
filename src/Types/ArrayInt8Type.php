@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace FOD\DBALClickHouse\Types;
 
+use Doctrine\DBAL\Platforms\AbstractPlatform;
 /**
  * Array(Int8) Type
  */
@@ -28,4 +29,8 @@ class ArrayInt8Type extends ArrayType implements BitNumericalClickHouseType
     {
         return NumericalClickHouseType::TYPE_INT;
     }
+	public function requiresSQLCommentHint(AbstractPlatform $platform)
+	{
+		return true;
+	}
 }

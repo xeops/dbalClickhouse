@@ -71,4 +71,9 @@ class ArrayDateType extends ArrayType implements DatableClickHouseType
     {
         return ParameterType::INTEGER;
     }
+
+	public function requiresSQLCommentHint(AbstractPlatform $platform)
+	{
+		return true;
+	}
 }

@@ -8,11 +8,16 @@
 
 namespace FOD\DBALClickHouse\Types;
 
-
+use Doctrine\DBAL\Platforms\AbstractPlatform;
 class DateTimeToString extends \DateTime
 {
 	public function __toString()
 	{
 		return $this->format("Y-m-d");
+	}
+
+	public function requiresSQLCommentHint(AbstractPlatform $platform)
+	{
+		return true;
 	}
 }

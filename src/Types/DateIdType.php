@@ -34,4 +34,9 @@ class DateIdType extends DateType
 	}
 
 
+	public function requiresSQLCommentHint(AbstractPlatform $platform)
+	{
+		return true;
+	}
+
 }

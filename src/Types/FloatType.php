@@ -18,4 +18,9 @@ class FloatType extends \Doctrine\DBAL\Types\FloatType
 	{
 		return ParameterType::INTEGER;
 	}
+
+	public function requiresSQLCommentHint(AbstractPlatform $platform)
+	{
+		return true;
+	}
 }

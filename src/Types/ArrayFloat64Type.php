@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace FOD\DBALClickHouse\Types;
 
+use Doctrine\DBAL\Platforms\AbstractPlatform;
 /**
  * Array(Float64) Type
  */
@@ -28,4 +29,9 @@ class ArrayFloat64Type extends ArrayType implements BitNumericalClickHouseType
     {
         return NumericalClickHouseType::TYPE_FLOAT;
     }
+
+	public function requiresSQLCommentHint(AbstractPlatform $platform)
+	{
+		return true;
+	}
 }

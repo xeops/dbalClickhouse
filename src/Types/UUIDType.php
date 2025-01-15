@@ -23,4 +23,9 @@ class UUIDType extends GuidType
 		return DatableClickHouseType::TYPE_UUID;
 	}
 
+	public function requiresSQLCommentHint(AbstractPlatform $platform)
+	{
+		return true;
+	}
+
 }

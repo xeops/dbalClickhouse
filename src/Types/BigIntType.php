@@ -45,4 +45,9 @@ class BigIntType extends \Doctrine\DBAL\Types\BigIntType
     {
         return (empty($fieldDeclaration['unsigned']) ? '' : 'U') . 'Int64';
     }
+
+	public function requiresSQLCommentHint(AbstractPlatform $platform)
+	{
+		return true;
+	}
 }

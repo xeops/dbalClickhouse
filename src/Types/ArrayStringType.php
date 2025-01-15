@@ -52,4 +52,9 @@ class ArrayStringType extends ArrayType implements StringClickHouseType
     {
         return ParameterType::INTEGER;
     }
+
+	public function requiresSQLCommentHint(AbstractPlatform $platform)
+	{
+		return true;
+	}
 }

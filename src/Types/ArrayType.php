@@ -100,4 +100,9 @@ abstract class ArrayType extends Type implements ClickHouseType
             $this instanceof BitNumericalClickHouseType ? $this->getBits() : ''
         );
     }
+
+	public function requiresSQLCommentHint(AbstractPlatform $platform)
+	{
+		return true;
+	}
 }
